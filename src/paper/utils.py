@@ -1,4 +1,5 @@
 import io
+import json
 import requests
 import fitz
 import jellyfish
@@ -24,7 +25,13 @@ from paper.lib import (
 from utils.http import (
     check_url_contains_pdf,
     http_request,
-    RequestMethods as methods
+    RequestMethods as methods,
+    guess_extension_from_headers
+)
+from researchhub.CustomStorage import custom_storage
+from researchhub.settings import(
+    AWS_STORAGE_BUCKET_NAME,
+    ENGRAFO_URL
 )
 
 CACHE_TOP_RATED_DATES = (
@@ -690,3 +697,45 @@ def invalidate_most_discussed_cache(hub_ids, with_default=True):
                 f'{hub_id}_{key}'
             )
             cache.delete(cache_key)
+
+
+def download_arxiv_latex(paper_id, arxiv_id):
+    source_url = f'https://arxiv.org/e-print/{arxiv_id}'
+    res = requests.get(source_url)
+    res.raise_for_status()
+    ext = guess_extension_from_headers(res.headers)
+    if not ext:
+        return False
+
+    today = datetime.today()
+    year = today.year
+    month = today.month
+    day = today.day
+
+    file_name = f'{arxiv_id}{ext}'
+    file = ContentFile(res.content)
+    file.name = file_name
+    path = f'uploads/papers/{year}/{month}/{day}/{paper_id}/'
+    file_path = f'{path}{file_name}'
+
+    if not custom_storage.exists(file_path):
+        custom_storage.save(content=file, name=file_path)
+    return path, file_name, file
+
+
+def engrafo_extract(paper_id, file_name, path):
+    headers = {'Content-Type': 'application/json'}
+    input_data = f's3://{AWS_STORAGE_BUCKET_NAME}/{path}{file_name}'
+    output_data = f's3://{AWS_STORAGE_BUCKET_NAME}/{path}engrafo/'
+    data = json.dumps({
+        'input': input_data,
+        'output': output_data
+    })
+    res = requests.post(ENGRAFO_URL, data=data, headers=headers)
+    res.raise_for_status()
+    res_json = res.json()
+    success = res_json['success']
+    if success:
+        res_path = f'{path}engrafo/index.html'
+        return res_path
+    return False

@@ -1,3 +1,5 @@
+ARXIV_IDENTIFER = 'arxiv'
+
 CS = {
     'cs.AI': 'Artificial Intelligence',
     'cs.CL': 'Computation and Language',

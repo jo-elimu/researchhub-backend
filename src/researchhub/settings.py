@@ -740,3 +740,6 @@ elif reward_time_hour:
 # from django.contrib.gis.geoip2 import GeoIP2
 
 # geo_ip = GeoIP2()
+
+# Engrafo
+ENGRAFO_URL = 'http://ec2-34-217-37-92.us-west-2.compute.amazonaws.com:9000/convert'

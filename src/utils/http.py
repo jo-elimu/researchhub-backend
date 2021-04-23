@@ -75,3 +75,29 @@ def check_url_contains_pdf(url) -> bool:
         return 'application/pdf' in content_type
     except Exception:
         return False
+
+
+def guess_extension_from_headers(headers):
+    if headers.get('content-type') == 'application/pdf':
+        return '.pdf'
+    if (
+        headers.get('content-encoding') == 'x-gzip'
+        and headers.get('content-type') == 'application/postscript'
+    ):
+        return '.ps.gz'
+    if (
+        headers.get('content-encoding') == 'x-gzip'
+        and headers.get('content-type') == 'application/x-eprint-tar'
+    ):
+        return '.tar.gz'
+    if (
+        headers.get('content-encoding') == 'x-gzip'
+        and headers.get('content-type') == 'application/x-eprint'
+    ):
+        return '.tex.gz'
+    if (
+        headers.get('content-encoding') == 'x-gzip'
+        and headers.get('content-type') == 'application/x-dvi'
+    ):
+        return '.dvi.gz'
+    return None

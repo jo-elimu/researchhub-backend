@@ -59,6 +59,8 @@ HELP_TEXT_IS_REMOVED = (
 class Paper(models.Model):
     REGULAR = 'REGULAR'
     PRE_REGISTRATION = 'PRE_REGISTRATION'
+    CERMINE = 'CERMINE'
+    ENGRAFO = 'ENGRAFO'
 
     PAPER_TYPE_CHOICES = [
         (REGULAR, REGULAR),
@@ -68,6 +70,11 @@ class Paper(models.Model):
     CREATED_LOCATION_PROGRESS = CREATED_LOCATIONS['PROGRESS']
     CREATED_LOCATION_CHOICES = [
         (CREATED_LOCATION_PROGRESS, 'Progress')
+    ]
+
+    EXTRACTOR_TYPE_CHOICES = [
+        (CERMINE, CERMINE),
+        (ENGRAFO, ENGRAFO)
     ]
 
     uploaded_date = models.DateTimeField(auto_now_add=True, db_index=True)
@@ -166,6 +173,12 @@ class Paper(models.Model):
         choices=PAPER_TYPE_CHOICES,
         max_length=32,
         default=REGULAR
+    )
+    extractor_type = models.CharField(
+        choices=EXTRACTOR_TYPE_CHOICES,
+        max_length=16,
+        default=None,
+        null=True
     )
 
     # User generated

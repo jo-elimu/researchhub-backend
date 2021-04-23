@@ -53,14 +53,17 @@ from paper.utils import (
     get_csl_item,
     get_redirect_url,
     IGNORE_PAPER_TITLES,
-    reset_paper_cache
+    reset_paper_cache,
+    download_arxiv_latex,
+    engrafo_extract
 )
 from hub.utils import scopus_to_rh_map
 from utils import sentry
 from utils.arxiv.categories import (
     get_category_name,
     ARXIV_CATEGORIES,
-    get_general_hub_name
+    get_general_hub_name,
+    ARXIV_IDENTIFER
 )
 from utils.crossref import get_crossref_issued_date
 from utils.twitter import (
@@ -489,6 +492,77 @@ def celery_get_paper_citation_count(paper_id, doi):
 
 @app.task(queue=f'{APP_ENV}_cermine_queue')
 def celery_extract_pdf_sections(paper_id):
+    Paper = apps.get_model('paper.Paper')
+    paper = Paper.objects.get(id=paper_id)
+    source = paper.external_source
+    alt_ids = paper.alternate_ids
+
+    extractor = 'CERMINE'
+    if not source and not alt_ids:
+        cermine_extract_pdf_sections.apply_async(
+            (paper_id,),
+            priority=3,
+            countdown=1
+        )
+        return extractor
+
+    if ARXIV_IDENTIFER in alt_ids or source.lower() == ARXIV_IDENTIFER:
+        extractor = 'ENGRAFO'
+        engrafo_extract_pdf_sections.apply_async(
+            (paper_id,),
+            priority=3,
+            countdown=1
+        )
+    else:
+        cermine_extract_pdf_sections.apply_async(
+            (paper_id,),
+            priority=3,
+            countdown=1
+        )
+    return extractor
+
+
+@app.task(queue=f'{APP_ENV}_cermine_queue')
+def engrafo_extract_pdf_sections(paper_id):
+    Paper = apps.get_model('paper.Paper')
+    paper = Paper.objects.get(id=paper_id)
+    arxiv_id = paper.alternate_ids.get(ARXIV_IDENTIFER)
+
+    if not arxiv_id:
+        cermine_extract_pdf_sections.apply_async(
+            (paper_id,),
+            priority=3,
+            countdown=1
+        )
+
+    res = download_arxiv_latex(paper_id, arxiv_id)
+
+    if not res:
+        cermine_extract_pdf_sections.apply_async(
+            (paper_id,),
+            priority=3,
+            countdown=1
+        )
+    else:
+        path, file_name, _ = res
+
+    html_path = engrafo_extract(paper_id, file_name, path)
+
+    if not html_path:
+        cermine_extract_pdf_sections.apply_async(
+            (paper_id,),
+            priority=3,
+            countdown=1
+        )
+
+    paper.pdf_file_extract = html_path
+    paper.extractor_type = Paper.ENGRAFO
+    paper.save()
+    return html_path
+
+
+@app.task(queue=f'{APP_ENV}_cermine_queue')
+def cermine_extract_pdf_sections(paper_id):
     if paper_id is None:
         return False, 'No Paper Id'
 
@@ -534,6 +608,7 @@ def celery_extract_pdf_sections(paper_id):
                 extract_filename,
                 ContentFile(soup.encode())
             )
+        paper.extractor_type = Paper.CERMINE
         paper.save()
 
         figures = os.listdir(images_path)
