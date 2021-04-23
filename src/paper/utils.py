@@ -29,7 +29,7 @@ from utils.http import (
     guess_extension_from_headers
 )
 from researchhub.CustomStorage import custom_storage
-from researchhub.settings import(
+from researchhub.settings import (
     AWS_STORAGE_BUCKET_NAME,
     ENGRAFO_URL
 )
@@ -708,9 +708,9 @@ def download_arxiv_latex(paper_id, arxiv_id):
         return False
 
     today = datetime.today()
-    year = today.year
-    month = today.month
-    day = today.day
+    year = today.strftime('%Y')
+    month = today.strftime('%m')
+    day = today.strftime('%d')
 
     file_name = f'{arxiv_id}{ext}'
     file = ContentFile(res.content)
