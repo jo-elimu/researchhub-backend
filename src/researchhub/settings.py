@@ -241,6 +241,7 @@ INSTALLED_APPS = [
     "peer_review",
     "referral",
     "review",
+    "jupyter",
 ]
 
 SITE_ID = 1

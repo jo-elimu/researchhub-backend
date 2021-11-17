@@ -21,6 +21,7 @@ import google_analytics.views
 import hub.views
 import hypothesis.views as hypothesis_views
 import invite.views as invite_views
+import jupyter.views as jupyter_views
 import mailing_list.views
 import new_feature_release.views
 import note.views as note_views
@@ -320,6 +321,12 @@ router.register(
 
 router.register(
     r"researchhub_unified_document/([0-9]+)/review", ReviewViewSet, basename="review"
+)
+
+router.register(
+    r'jupyter_session',
+    jupyter_views.JupyterSessionViewSet,
+    basename='jupyter_session'
 )
 
 urlpatterns = [
