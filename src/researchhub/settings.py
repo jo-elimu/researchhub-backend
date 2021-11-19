@@ -785,6 +785,7 @@ elif reward_time_hour:
 # Killswitch Variables
 SERIALIZER_SWITCH = os.environ.get("SERIALIZER_SWITCH", True)
 
+
 # CKEditor Cloud Services
 CKEDITOR_CLOUD_ACCESS_KEY = os.environ.get(
     "CKEDITOR_CLOUD_ACCESS_KEY", keys.CKEDITOR_CLOUD_ACCESS_KEY
@@ -875,3 +876,9 @@ REFERRAL_PROGRAM = {
         "BOUNTY_PAYOUT",
     ],
 }
+
+# Jupyter
+JUPYTER_ADMIN_TOKEN = os.environ.get(
+    "JUPYTER_ADMIN_TOKEN",
+    keys.JUPYTER_ADMIN_TOKEN
+)
