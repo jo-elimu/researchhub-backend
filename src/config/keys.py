@@ -55,3 +55,5 @@ WEB3_RSC_ADDRESS = os.environ.get(
 WEB3_KEYSTORE_ADDRESS = os.environ.get("WEB3_KEYSTORE_ADDRESS", "")
 
 TRANSPOSE_KEY = os.environ.get("TRANSPOSE_KEY", "")
+
+JUPYTER_ADMIN_TOKEN = os.environ.get("JUPYTER_ADMIN_TOKEN", "")
