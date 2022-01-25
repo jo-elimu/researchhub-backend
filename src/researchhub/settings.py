@@ -25,6 +25,9 @@ STAGING = 'staging' in APP_ENV
 CELERY_WORKER = os.environ.get('CELERY_WORKER', False)
 ELASTIC_APM_OFF = os.environ.get('ELASTIC_APM_OFF', False)
 
+# To allow testing on https://dev.researchhub.com
+RUN_RESEARCHHUB_DEV_SUBDOMAIN = os.environ.get('RUN_RESEARCHHUB_DEV_SUBDOMAIN', False)
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -44,7 +47,11 @@ else:
     CONFIG_BASE_DIR = 'config_local'
     from config_local import db, keys, twitter
 
-if DEVELOPMENT or TESTING:
+
+if (DEVELOPMENT or TESTING) and RUN_RESEARCHHUB_DEV_SUBDOMAIN:
+    # To allow testing on https://dev.researchhub.com
+    BASE_FRONTEND_URL = 'https://dev.researchhub.com'
+elif DEVELOPMENT or TESTING:
     BASE_FRONTEND_URL = 'http://localhost:3000'
 elif PRODUCTION:
     BASE_FRONTEND_URL = 'https://researchhub.com'
@@ -90,6 +97,9 @@ if not (PRODUCTION or STAGING):
         '10.0.2.2',
         '10.0.3.2'
     ]
+    if RUN_RESEARCHHUB_DEV_SUBDOMAIN:
+        # To allow testing on https://dev.researchhub.com
+        ALLOWED_HOSTS += ['web']
 
 if ELASTIC_BEANSTALK:
     try:
