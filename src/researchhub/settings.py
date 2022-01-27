@@ -50,7 +50,7 @@ else:
 
 if (DEVELOPMENT or TESTING) and RUN_RESEARCHHUB_DEV_SUBDOMAIN:
     # To allow testing on https://dev.researchhub.com
-    BASE_FRONTEND_URL = 'https://dev.researchhub.com'
+    BASE_FRONTEND_URL = 'https://dev-backend.researchhub.com'
 elif DEVELOPMENT or TESTING:
     BASE_FRONTEND_URL = 'http://localhost:3000'
 elif PRODUCTION:
@@ -145,6 +145,8 @@ CORS_ORIGIN_WHITELIST = [
     'https://staging-web2.researchhub.com',
     'https://researchhub.com',
     'http://10.0.2.2:3000',
+    'http://dev-backend.researchhub.com',
+    'https://dev-backend.researchhub.com',
 ]
 
 
@@ -342,6 +344,11 @@ if STAGING:
     LOGIN_REDIRECT_URL = 'https://staging-web.researchhub.com/orcid'
 if PRODUCTION:
     LOGIN_REDIRECT_URL = 'https://researchhub.com/orcid'
+if RUN_RESEARCHHUB_DEV_SUBDOMAIN:
+    LOGIN_REDIRECT_URL = 'https://dev-backend.researchhub.com/orcid'
+
+
+
 SOCIALACCOUNT_ADAPTER = 'oauth.adapters.SocialAccountAdapter'
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
 SOCIALACCOUNT_EMAIL_REQUIRED = False
