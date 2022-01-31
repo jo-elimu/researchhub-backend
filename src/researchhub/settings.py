@@ -147,10 +147,8 @@ CORS_ORIGIN_WHITELIST = [
     'http://10.0.2.2:3000',
     'http://dev-backend.researchhub.com',
     'https://dev-backend.researchhub.com',
+    'https://dev.researchhub.com'
 ]
-
-if RUN_RESEARCHHUB_DEV_SUBDOMAIN:
-    CORS_ORIGIN_WHITELIST += ['*']
 
 
 # Application definition
