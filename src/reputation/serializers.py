@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 import ethereum.lib
 
-from reputation.models import Withdrawal, Contribution
+from reputation.models import Withdrawal, Contribution, Deposit
 from researchhub.serializers import DynamicModelFieldSerializer
 from user.serializers import UserSerializer, DynamicUserSerializer
 from summary.serializers import SummarySerializer, SummaryVoteSerializer
@@ -20,7 +20,15 @@ from discussion.serializers import (
     DynamicReplySerializer,
     DynamicVoteSerializer
 )
+from user.serializers import (
+    DynamicAuthorSerializer,
+)
+from user.models import Author
 
+class DepositSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Deposit
+        fields = '__all__'
 
 class WithdrawalSerializer(serializers.ModelSerializer):
     user = UserSerializer(default=serializers.CurrentUserDefault())
@@ -129,13 +137,14 @@ class ContributionSerializer(serializers.ModelSerializer):
 
         if serializer is not None:
             return serializer.data
-        return None
+        return None 
 
 
 class DynamicContributionSerializer(DynamicModelFieldSerializer):
     source = serializers.SerializerMethodField()
     unified_document = serializers.SerializerMethodField()
     user = serializers.SerializerMethodField()
+    author = serializers.SerializerMethodField()
 
     class Meta:
         model = Contribution
@@ -212,6 +221,7 @@ class DynamicContributionSerializer(DynamicModelFieldSerializer):
             return serializer.data
         return None
 
+
     def get_unified_document(self, contribution):
         from researchhub_document.serializers import (
           DynamicUnifiedDocumentSerializer
@@ -231,6 +241,16 @@ class DynamicContributionSerializer(DynamicModelFieldSerializer):
         _context_fields = context.get('rep_dcs_get_user', {})
         serializer = DynamicUserSerializer(
             contribution.user,
+            context=context,
+            **_context_fields
+        )
+        return serializer.data
+
+    def get_author(self, contribution):
+        context = self.context
+        _context_fields = context.get('rep_dcs_get_author', {})
+        serializer = DynamicAuthorSerializer(
+            Author.objects.get(user=contribution.user),
             context=context,
             **_context_fields
         )

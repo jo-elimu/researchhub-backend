@@ -18,6 +18,7 @@ import sentry_sdk
 from celery.task.schedules import crontab
 from sentry_sdk.integrations.django import DjangoIntegration
 
+
 APP_ENV = os.environ.get('APP_ENV') or 'development'
 DEVELOPMENT = 'development' in APP_ENV
 PRODUCTION = 'production' in APP_ENV
@@ -34,7 +35,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CI = "GITHUB_ACTIONS" in os.environ
 CLOUD = PRODUCTION or STAGING or CI
 TESTING = ('test' in APP_ENV) or ('test' in sys.argv)
-PYTHONPATH = '/opt/python/current/app:$PYTHONPATH'
+PYTHONPATH = '/var/app/current:$PYTHONPATH'
 DJANGO_SETTINGS_MODULE = 'researchhub.settings'
 ELASTIC_BEANSTALK = (APP_ENV in ['production', 'staging', 'development'])
 NO_SILK = os.environ.get('NO_SILK', False)
@@ -87,7 +88,7 @@ ALLOWED_HOSTS = [
     '.quantfive.org',
     '.elasticbeanstalk.com',
     '.researchhub.com',
-    'localhost'
+    'localhost',
 ]
 
 if not (PRODUCTION or STAGING):
@@ -102,36 +103,62 @@ if not (PRODUCTION or STAGING):
         ALLOWED_HOSTS += ['web']
 
 if ELASTIC_BEANSTALK:
+    # This is for health checks
     try:
+        EC2_METADATA_HEADERS = {
+            'X-aws-ec2-metadata-token-ttl-seconds': '21600'
+        }
+
+        EC2_METADATA_TOKEN = requests.put(
+            'http://169.254.169.254/latest/api/token',
+            timeout=0.01,
+            headers=EC2_METADATA_HEADERS
+        ).text
+
+        EC2_METADATA_TOKEN_HEADER = {
+            'X-aws-ec2-metadata-token': EC2_METADATA_TOKEN
+        }
+
         ALLOWED_HOSTS.append(
-            requests.get('http://169.254.169.254/latest/meta-data/local-ipv4',
-                         timeout=0.01).text)
-        ALLOWED_HOSTS.append(
-            requests.get('http://172.31.19.162/latest/meta-data/local-ipv4',
-                         timeout=0.01).text)
-        ALLOWED_HOSTS.append(
-            requests.get('http://54.200.83.4/latest/meta-data/local-ipv4',
-                         timeout=0.01).text)
-        # Production private ips
-        ALLOWED_HOSTS.append(
-            requests.get('http://172.31.0.82/latest/meta-data/local-ipv4',
-                         timeout=0.01).text)
-        ALLOWED_HOSTS.append(
-            requests.get('http://172.31.9.43/latest/meta-data/local-ipv4',
-                         timeout=0.01).text)
-        # Staging private ips
-        ALLOWED_HOSTS.append(
-            requests.get('http://172.31.8.17/latest/meta-data/local-ipv4',
-                         timeout=0.01).text)
-        ALLOWED_HOSTS.append(
-            requests.get('http://172.31.6.81/latest/meta-data/local-ipv4',
-                         timeout=0.01).text)
-        ALLOWED_HOSTS.append(
-            requests.get('http://172.31.5.32/latest/meta-data/local-ipv4',
-                         timeout=0.01).text)
+            requests.get(
+                'http://169.254.169.254/latest/meta-data/local-ipv4',
+                timeout=0.01,
+                headers=EC2_METADATA_TOKEN_HEADER
+            ).text
+        )
+        # ALLOWED_HOSTS.append(
+        #     requests.get('http://172.31.19.162/latest/meta-data/local-ipv4',
+        #                  timeout=0.01).text
+        # )
+        # ALLOWED_HOSTS.append(
+        #     requests.get('http://54.200.83.4/latest/meta-data/local-ipv4',
+        #                  timeout=0.01).text
+        # )
+        # # Production private ips
+        # ALLOWED_HOSTS.append(
+        #     requests.get('http://172.31.0.82/latest/meta-data/local-ipv4',
+        #                  timeout=0.01).text
+        # )
+        # ALLOWED_HOSTS.append(
+        #     requests.get('http://172.31.9.43/latest/meta-data/local-ipv4',
+        #                  timeout=0.01).text
+        # )
+        # # Staging private ips
+        # ALLOWED_HOSTS.append(
+        #     requests.get('http://172.31.8.17/latest/meta-data/local-ipv4',
+        #                  timeout=0.01).text
+        # )
+        # ALLOWED_HOSTS.append(
+        #     requests.get('http://172.31.6.81/latest/meta-data/local-ipv4',
+        #                  timeout=0.01).text
+        # )
+        # ALLOWED_HOSTS.append(
+        #     requests.get('http://172.31.5.32/latest/meta-data/local-ipv4',
+        #                  timeout=0.01).text
+        # )
+
     except requests.exceptions.RequestException:
         pass
-
 
 # Cors
 
@@ -183,8 +210,8 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.orcid',
     'rest_framework.authtoken',
-    'rest_auth',
-    'rest_auth.registration',
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
 
     # Storage
     'storages',
@@ -264,7 +291,7 @@ if not CLOUD and not NO_SILK == 'True':
 
 ROOT_URLCONF = 'researchhub.urls'
 
-FILE_UPLOAD_MAX_MEMORY_SIZE = 26214400  # 25MB max data allowed
+FILE_UPLOAD_MAX_MEMORY_SIZE = 26214400 * 2.1 # ~55MB max data allowed
 
 PAGINATION_PAGE_SIZE = 10
 
@@ -523,6 +550,12 @@ EMAIL_WHITELIST = [
     'pat@researchhub.com'
 ]
 
+# Whitelist for distributing RSC
+DIST_WHITELIST = [
+    'pdj7@georgetown.edu',
+    'patricklu@researchhub.com',
+]
+
 # Sentry
 
 SENTRY_ENVIRONMENT = APP_ENV
@@ -668,7 +701,7 @@ elif STAGING:
         'http://ec2-52-38-164-185.us-west-2.compute.amazonaws.com'
     )
 else:
-    ASYNC_SERVICE_HOST = 'http://localhost:8080'
+    ASYNC_SERVICE_HOST = os.environ.get("ASYNC_SERVICE_HOST", 'http://localhost:8080')
 
 
 # APM
@@ -796,3 +829,6 @@ SERIALIZER_SWITCH = os.environ.get('SERIALIZER_SWITCH', True)
 # CKEditor Cloud Services
 CKEDITOR_CLOUD_ACCESS_KEY = os.environ.get('CKEDITOR_CLOUD_ACCESS_KEY', keys.CKEDITOR_CLOUD_ACCESS_KEY)
 CKEDITOR_CLOUD_ENVIRONMENT_ID = os.environ.get('CKEDITOR_CLOUD_ENVIRONMENT_ID', keys.CKEDITOR_CLOUD_ENVIRONMENT_ID)
+
+# Async Service API Key
+ASYNC_SERVICE_API_KEY = os.environ.get("ASYNC_SERVICE_API_KEY", keys.ASYNC_SERVICE_API_KEY or 'testapikeyservice')

@@ -34,6 +34,7 @@ import user.views
 from user.views import GatekeeperViewSet
 
 from researchhub.settings import USE_DEBUG_TOOLBAR, INSTALLED_APPS
+from user.views import editor_views
 
 router = routers.DefaultRouter()
 
@@ -254,6 +255,8 @@ router.register(r'user', user.views.UserViewSet)
 
 router.register(r'withdrawal', reputation.views.WithdrawalViewSet)
 
+router.register(r'deposit', reputation.views.DepositViewSet)
+
 router.register(r'user_verification', user.views.VerificationViewSet)
 
 router.register(
@@ -326,17 +329,18 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     re_path(r'^api/', include(router.urls)),
     path('api/events/forward_event/', google_analytics.views.forward_event),
+    # TODO: calvinhlee - consolidate all mod views into 1 set
     path(
-        'api/author_claim_token_validation/',
-        researchhub_case_views.validate_user_request_email
+        'api/get_hub_active_contributors/',
+        editor_views.get_hub_active_contributors
     ),
     path(
-        'api/moderators/author_claim_case/',
-        researchhub_case_views.handle_author_claim_cases_for_mods
+        'api/moderators/get_editors_by_contributions/',
+        editor_views.get_editors_by_contributions
     ),
     path(
-        'api/moderators/author_claim_case/counts/',
-        researchhub_case_views.get_author_claim_counts_for_mods
+        'api/reputation/distribute_rsc/',
+        reputation.views.distribute_rsc
     ),
     path(
         'api/permissions/',
@@ -379,7 +383,7 @@ urlpatterns = [
         oauth.views.GoogleLogin.as_view(),
         name='google_login'
     ),
-    path(r'api/auth/', include('rest_auth.urls')),
+    path(r'api/auth/', include('dj_rest_auth.urls')),
     re_path(r'^auth/signup/', include(oauth.urls.registration_urls)),
     re_path(r'^auth/', include(oauth.urls.default_urls)),
     path(

@@ -6,7 +6,6 @@ from django.utils import timezone
 
 import ethereum.lib
 import reputation.distributions as distributions
-from user.models import User
 from utils.models import SoftDeletableModel
 from hub.models import Hub
 
@@ -59,7 +58,7 @@ class Distribution(SoftDeletableModel, PaidStatusModelMixin):
     ]
 
     recipient = models.ForeignKey(
-        User,
+        'user.User',
         related_name='reputation_records',
         on_delete=models.SET_NULL,
         blank=True,
@@ -125,12 +124,28 @@ class Distribution(SoftDeletableModel, PaidStatusModelMixin):
         self.withdrawal = withdrawal_instance
         self.save()
 
+class Deposit(SoftDeletableModel, PaidStatusModelMixin):
+    user = models.ForeignKey(
+        'user.User',
+        related_name="deposits",
+        on_delete=models.SET_NULL,
+        null=True
+    )
+    amount = models.CharField(max_length=255, default='0.0')
+    from_address = models.CharField(max_length=255)
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+    transaction_hash = models.CharField(
+        default='',
+        blank=True,
+        max_length=255
+    )
 
 class Withdrawal(SoftDeletableModel, PaidStatusModelMixin):
     TOKEN_ADDRESS_CHOICES = ethereum.lib.TOKEN_ADDRESS_CHOICES
 
     user = models.ForeignKey(
-        User,
+        'user.User',
         related_name='withdrawals',
         on_delete=models.SET_NULL,
         null=True
@@ -192,7 +207,7 @@ class Contribution(models.Model):
         choices=contribution_choices
     )
     user = models.ForeignKey(
-        User,
+        'user.User',
         related_name='contributions',
         on_delete=models.SET_NULL,
         null=True

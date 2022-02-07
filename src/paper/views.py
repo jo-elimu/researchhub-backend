@@ -83,6 +83,7 @@ from purchase.models import Purchase
 from researchhub.lib import get_document_id_from_path
 from reputation.models import Contribution
 from reputation.tasks import create_contribution
+from researchhub_document.views.custom.unified_document_pagination import UNIFIED_DOC_PAGE_SIZE
 from user.models import Author
 from utils.http import GET, POST, check_url_contains_pdf
 from utils.sentry import log_error, log_info
@@ -281,14 +282,6 @@ class PaperViewSet(viewsets.ModelViewSet):
             instance = self.get_object()
             self._send_created_location_ga_event(instance, request.user)
 
-        hub_ids = request.data.get('hubs', [0])
-        if type(hub_ids) is not list:
-            hub_ids = list(hub_ids)
-
-        reset_unified_document_cache(hub_ids)
-        invalidate_top_rated_cache(hub_ids)
-        invalidate_newest_cache(hub_ids)
-        invalidate_most_discussed_cache(hub_ids)
         instance.reset_cache(use_celery=False)
         return response
 
@@ -702,32 +695,7 @@ class PaperViewSet(viewsets.ModelViewSet):
 
         if csl_item:
             # Cleaning csl data
-            try:
-                cleaned_title = csl_item.get('title', '').strip()
-                duplicate_papers = Paper.objects.filter(
-                    paper_title__icontains=cleaned_title
-                ).annotate(
-                    similarity=TrigramSimilarity('paper_title', cleaned_title)
-                ).filter(
-                    similarity__gt=0.7
-                ).order_by(
-                    'similarity'
-                )[:3]
-
-                if duplicate_papers.exists():
-                    serializer_data = self.serializer_class(
-                        duplicate_papers,
-                        context={'purchase_minimal_serialization': True},
-                        many=True
-                    ).data
-                    data = {
-                        'key': 'title',
-                        'results': serializer_data
-                    }
-                    return Response(data, status=status.HTTP_403_FORBIDDEN)
-            except Exception as e:
-                print(e)
-
+            cleaned_title = csl_item.get('title', '').strip()
             csl_item['title'] = cleaned_title
             abstract = csl_item.get('abstract', '')
             cleaned_abstract = clean_abstract(abstract)
@@ -978,9 +946,9 @@ class PaperViewSet(viewsets.ModelViewSet):
                 ).distinct()
             else:
                 papers = sorted(papers, key=lambda paper: -paper['hot_score'])
-                papers = papers[:10]
+                papers = papers[:UNIFIED_DOC_PAGE_SIZE]
                 next_page = request.build_absolute_uri()
-                if len(papers) < 10:
+                if len(papers) < UNIFIED_DOC_PAGE_SIZE:
                     next_page = None
                 else:
                     next_page = replace_query_param(next_page, 'page', 2)

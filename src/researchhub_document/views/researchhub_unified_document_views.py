@@ -47,7 +47,14 @@ from discussion.reaction_serializers import (
     VoteSerializer as ReactionVoteSerializer
 )
 from discussion.models import Vote as ReactionVote
+from researchhub_document.views.custom.unified_document_pagination import (
+    UNIFIED_DOC_PAGE_SIZE,
+    UnifiedDocPagination
+)
 from user.utils import reset_latest_acitvity_cache
+from researchhub_document.permissions import (
+    HasDocumentCensorPermission
+)
 
 
 class ResearchhubUnifiedDocumentViewSet(ModelViewSet):
@@ -55,9 +62,44 @@ class ResearchhubUnifiedDocumentViewSet(ModelViewSet):
     permission_classes = [
         IsAuthenticated,
     ]
+    dynamic_serializer_class = DynamicUnifiedDocumentSerializer
+    pagination_class = UnifiedDocPagination
     queryset = ResearchhubUnifiedDocument.objects.all()
     serializer_class = ResearchhubUnifiedDocumentSerializer
-    dynamic_serializer_class = DynamicUnifiedDocumentSerializer
+
+    @action(
+        detail=True,
+        methods=['put', 'patch', 'delete'],
+        permission_classes=[
+            HasDocumentCensorPermission
+        ]
+    )
+    def censor(self, request, pk=None):
+        doc = self.get_object()
+        doc.is_removed = True
+        doc.save()
+
+        return Response(
+            self.get_serializer(instance=doc).data,
+            status=200
+        )
+
+    @action(
+        detail=True,
+        methods=['put', 'patch'],
+        permission_classes=[
+            HasDocumentCensorPermission
+        ]
+    )
+    def restore(self, request, pk=None):
+        doc = self.get_object()
+        doc.is_removed = False
+        doc.save()
+
+        return Response(
+            self.get_serializer(instance=doc).data,
+            status=200
+        )
 
     def update(self, request, *args, **kwargs):
         update_response = super().update(request, *args, **kwargs)
@@ -101,12 +143,12 @@ class ResearchhubUnifiedDocumentViewSet(ModelViewSet):
                     'aggregate_citation_consensus',
                     'created_by',
                     'created_date',
+                    'first_preview',
                     'hot_score',
                     'hubs',
                     'id',
                     'discussion_count',
                     'paper_title',
-                    'preview_img',
                     'renderable_text',
                     'score',
                     'slug',
@@ -161,6 +203,16 @@ class ResearchhubUnifiedDocumentViewSet(ModelViewSet):
             'hyp_dhs_get_created_by': {
                 '_include_fields': [
                     'author_profile',
+                ]
+            },
+            'hyp_dhs_get_hubs': {
+                '_include_fields': [
+                    'id',
+                    'name',
+                    'is_locked',
+                    'slug',
+                    'is_removed',
+                    'hub_image',
                 ]
             }
         }
@@ -422,13 +474,19 @@ class ResearchhubUnifiedDocumentViewSet(ModelViewSet):
                             if documents_type not in (OrderedDict, dict):
                                 # This is hit when the document is a
                                 # researchhub post.
-                                document = documents[0]
+                                if len(documents) == 0:
+                                    continue
+                                else:
+                                    document = documents[0]
                             else:
                                 # This is hit when the document is a paper
                                 document = documents
                         elif document_request_type == 'posts':
                             if documents_type not in (OrderedDict, dict):
-                                document = documents[0]
+                                if len(documents) == 0:
+                                    continue
+                                else:
+                                    document = documents[0]
                             else:
                                 continue
                         else:
@@ -457,9 +515,9 @@ class ResearchhubUnifiedDocumentViewSet(ModelViewSet):
                 all_documents = sorted(
                     all_documents, key=lambda doc: -doc['hot_score']
                 )
-                all_documents = all_documents[:10]
+                all_documents = all_documents[:UNIFIED_DOC_PAGE_SIZE]
                 next_page = request.build_absolute_uri()
-                if len(all_documents) < 10:
+                if len(all_documents) < UNIFIED_DOC_PAGE_SIZE:
                     next_page = None
                 else:
                     next_page = replace_query_param(next_page, 'page', 2)
