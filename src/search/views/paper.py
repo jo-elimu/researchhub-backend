@@ -15,6 +15,7 @@ from django_elasticsearch_dsl_drf.filter_backends import (
 from elasticsearch_dsl import Search
 from django_elasticsearch_dsl_drf.viewsets import DocumentViewSet
 from django_elasticsearch_dsl_drf.pagination import LimitOffsetPagination
+from django_elasticsearch_dsl_drf.constants import SUGGESTER_COMPLETION, SUGGESTER_TERM, SUGGESTER_PHRASE
 
 from search.documents.paper import PaperDocument
 from search.serializers.paper import PaperDocumentSerializer
@@ -99,6 +100,22 @@ class PaperDocumentView(DocumentViewSet):
         'discussion_count': 'discussion_count',
         'score': 'score',
         'hot_score': 'hot_score',
+    }
+
+    # Suggester fields
+    suggester_fields = {
+        'title_suggest': {
+            'field': 'title.suggest',
+            'suggesters': [
+                SUGGESTER_COMPLETION,
+            ],
+        },
+        'abstract_suggest': {
+            'field': 'abstract.suggest',
+            'suggesters': [
+                SUGGESTER_COMPLETION,
+            ],
+        }
     }
 
     highlight_fields = {
