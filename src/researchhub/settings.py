@@ -144,17 +144,20 @@ if ELASTIC_BEANSTALK:
 
 # Cors
 
-CORS_ORIGIN_WHITELIST = [
-    "http://localhost:3000",
-    "http://localhost:3003",
-    "https://dev.researchhub.com",
-    "https://researchnow.researchhub.com",
-    "https://www.researchhub.com",
-    "https://staging-web.researchhub.com",
-    "https://staging-web2.researchhub.com",
-    "https://researchhub.com",
-    "http://10.0.2.2:3000",
-]
+# CORS_ORIGIN_WHITELIST = [
+#     "http://localhost:3000",
+#     "http://localhost:3003",
+#     "https://dev.researchhub.com",
+#     "https://researchnow.researchhub.com",
+#     "https://www.researchhub.com",
+#     "https://staging-web.researchhub.com",
+#     "https://staging-web2.researchhub.com",
+#     "https://researchhub.com",
+#     "http://10.0.2.2:3000",
+#     "http://10.0.2.2:3000",
+# ]
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 
 # Application definition
