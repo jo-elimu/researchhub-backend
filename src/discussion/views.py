@@ -4,8 +4,8 @@ import hashlib
 from django.contrib.admin.options import get_content_type_for_model
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.db.models import Q
-from django.db.models.functions import Coalesce, NullIf
+from django.db.models import Q, Sum, FloatField, Count
+from django.db.models.functions import Coalesce
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
@@ -241,12 +241,11 @@ class ThreadViewSet(viewsets.ModelViewSet, ReactionViewActionMixin):
             .filter(created_by__isnull=False)
             .annotate(
                 ordering_score=ORDERING_SCORE_ANNOTATION,
-                bounty_created_date=NullIf('bounties__created_date'),
-                bounty_amount=Coalesce('bounties__amount', 0),
+                bounties_amount=Coalesce(Sum('bounties__amount', output_field=FloatField()), 0.0),
             )
-            .order_by(*order, '-bounty_created_date', '-bounty_amount')
+            .order_by(*order, '-bounties__created_date', '-bounties_amount')
         )
-        import pdb; pdb.set_trace()
+
         return threads.prefetch_related("paper")
 
     @action(

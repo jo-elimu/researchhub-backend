@@ -1,0 +1,1 @@
+procfile_supervisord: /usr/bin/supervisord -n -c /etc/supervisord.conf
