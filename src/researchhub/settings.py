@@ -148,6 +148,9 @@ if ELASTIC_BEANSTALK:
         pass
 
 # Cors
+from corsheaders.defaults import default_headers 
+
+CORS_ALLOW_HEADERS = default_headers + ('access-control-allow-headers', "access-control-allow-methods", "access-control-allow-origin")
 CORS_ORIGIN_WHITELIST = [
     "http://localhost:3000",
     "http://localhost:3003",
