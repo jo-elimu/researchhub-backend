@@ -38,6 +38,7 @@ import researchhub_document.views as researchhub_document_views
 import search.urls
 import summary.views
 import user.views
+from citation.views import CitationViewSet
 from peer_review.views import (
     PeerReviewInviteViewSet,
     PeerReviewRequestViewSet,
@@ -326,6 +327,8 @@ router.register(r"rh_comments", RhCommentViewSet, basename="rh_comments")
 router.register(
     r"rh_comment_threads", RhCommentThreadViewSet, basename="rh_comment_threads"
 )
+router.register(r"citation_entry", CitationViewSet, basename="citation_entry")
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     re_path(r"^api/", include(router.urls)),
