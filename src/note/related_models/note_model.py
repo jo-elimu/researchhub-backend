@@ -107,14 +107,14 @@ class Note(DefaultModel):
 
     def notify_jupyter_file_update(self, data):
         organization_slug = self.organization.slug
-        room = f'{organization_slug}_notebook'
+        room = f"{organization_slug}_notebook"
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             room,
             {
-                'type': 'notify_jupyter_file_update',
-                'data': data,
-            }
+                "type": "notify_jupyter_file_update",
+                "data": data,
+            },
         )
 
 

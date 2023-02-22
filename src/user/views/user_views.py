@@ -47,7 +47,7 @@ from researchhub_document.related_models.researchhub_post_model import Researchh
 from researchhub_document.serializers import DynamicPostSerializer
 from review.models.review_model import Review
 from user.filters import AuthorFilter, UserFilter
-from user.models import Author, Follow, Major, University, User, Verification, Gatekeeper
+from user.models import Author, Follow, Major, University, User, Verification
 from user.permissions import Censor, RequestorIsOwnUser, UpdateAuthor
 from user.serializers import (
     AuthorEditableSerializer,
