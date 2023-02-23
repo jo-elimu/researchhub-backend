@@ -1,46 +1,45 @@
 import json
 
-from asgiref.sync import async_to_sync
-from channels.generic.websocket import WebsocketConsumer
+from channels.exceptions import StopConsumer
+from channels.generic.websocket import AsyncWebsocketConsumer
+
+from utils.parsers import json_serial
 
 
-class JupyterConsumer(WebsocketConsumer):
-    def connect(self):
-        kwargs = self.scope['url_route']['kwargs']
+class JupyterConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        kwargs = self.scope["url_route"]["kwargs"]
 
-        uid = kwargs['uid']
-        room = f'JUPYTER_{uid}'
+        uid = kwargs["uid"]
+        room = f"JUPYTER_{uid}"
         self.room_group_name = room
 
-        async_to_sync(self.channel_layer.group_add)(
-            self.room_group_name,
-            self.channel_name
-        )
-        self.accept(subprotocol='Token')
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        await self.accept(subprotocol="Token")
 
-    def disconnect(self, close_code):
-        if close_code == 401 or not hasattr(self, 'room_group_name'):
+    async def disconnect(self, close_code):
+        if close_code == 401 or not hasattr(self, "room_group_name"):
             return
         else:
-            async_to_sync(self.channel_layer.group_discard)(
-                self.room_group_name,
-                self.channel_name
+            await self.channel_layer.group_discard(
+                self.room_group_name, self.channel_name
             )
+        raise StopConsumer()
 
-    def notify_jupyter_file_update(self, event):
+    async def notify_jupyter_file_update(self, event):
         # Send message to webSocket (Frontend)
-        data = event['data']
+        data = event["data"]
         data = {
-            'type': 'update',
-            'data': data,
+            "type": "update",
+            "data": data,
         }
-        self.send(text_data=json.dumps(data))
+        await self.send(text_data=json.dumps(data, default=json_serial))
 
-    def notify_jupyter_server_progress(self, event):
+    async def notify_jupyter_server_progress(self, event):
         # Send message to webSocket (Frontend)
-        data = event['data']
+        data = event["data"]
         data = {
-            'type': 'loading_progress',
-            'data': data,
+            "type": "loading_progress",
+            "data": data,
         }
-        self.send(text_data=json.dumps(data))
+        await self.send(text_data=json.dumps(data, default=json_serial))

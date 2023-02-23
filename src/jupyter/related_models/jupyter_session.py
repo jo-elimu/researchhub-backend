@@ -1,7 +1,7 @@
-from django.db import models
-
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from django.db import models
+
 from utils.models import DefaultModel
 
 
@@ -12,24 +12,24 @@ class JupyterSession(DefaultModel):
 
     def notify_jupyter_server_progress(self, data):
         uid = self.uid
-        room = f'JUPYTER_{uid}'
+        room = f"JUPYTER_{uid}"
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             room,
             {
-                'type': 'notify_jupyter_server_progress',
-                'data': data,
-            }
+                "type": "notify_jupyter_server_progress",
+                "data": data,
+            },
         )
 
     def notify_jupyter_file_update(self, data):
         uid = self.uid
-        room = f'JUPYTER_{uid}'
+        room = f"JUPYTER_{uid}"
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             room,
             {
-                'type': 'notify_jupyter_file_update',
-                'data': data,
-            }
+                "type": "notify_jupyter_file_update",
+                "data": data,
+            },
         )
