@@ -79,6 +79,7 @@ class User(AbstractUser):
     suspended_updated_date = models.DateTimeField(null=True)
     updated_date = models.DateTimeField(auto_now=True)
     upload_tutorial_complete = models.BooleanField(default=False)
+    reference_manager_onboarding_complete = models.BooleanField(default=False)
 
     objects = UserManager()
 

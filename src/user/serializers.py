@@ -343,6 +343,7 @@ class UserSerializer(ModelSerializer):
             "hub_rep",
             "time_rep",
             "probable_spammer",
+            "reference_manager_onboarding_complete",
         ]
         read_only_fields = [
             "id",
