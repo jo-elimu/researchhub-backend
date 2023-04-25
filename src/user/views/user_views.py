@@ -49,7 +49,7 @@ from researchhub_document.serializers import DynamicPostSerializer
 from review.models.review_model import Review
 from user.filters import AuthorFilter, UserFilter
 from user.models import Author, Follow, Major, University, User, Verification
-from user.permissions import Censor, RequestorIsOwnUser, UpdateAuthor
+from user.permissions import Censor, RequestorIsOwnUser, UpdateAuthor, UserIsOwner
 from user.serializers import (
     AuthorEditableSerializer,
     AuthorSerializer,
@@ -72,9 +72,17 @@ from utils.throttles import THROTTLE_CLASSES
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.filter(is_suspended=False)
     serializer_class = UserEditableSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated, UserIsOwner]
     filter_backends = (DjangoFilterBackend,)
     filter_class = UserFilter
+    _ALLOWED_UPDATE_FIELDS = set(["reference_manager_onboarding_complete"])
+
+    def update(self, request, *args, **kwargs):
+        data = request.data
+        disallowed_keys = set(data.keys()) - self._ALLOWED_UPDATE_FIELDS
+        for key in disallowed_keys:
+            data.pop(key)
+        return super().update(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.request.GET.get("referral_code") or self.request.GET.get("invited_by"):

@@ -1,4 +1,4 @@
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 from utils.http import DELETE, GET, POST, RequestMethods
 from utils.permissions import AuthorizationBasedPermission
@@ -74,6 +74,13 @@ class UserIsEditor(BasePermission):
             return False
 
         return user.is_hub_editor()
+
+
+class UserIsOwner(BasePermission):
+    message = "Requestor is not owner"
+
+    def has_object_permission(self, request, view, obj):
+        return obj == request.user
 
 
 class RequestorIsOwnUser(BasePermission):
