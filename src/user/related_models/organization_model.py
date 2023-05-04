@@ -23,8 +23,8 @@ class Organization(DefaultModel):
     )
     permissions = GenericRelation(
         Permission,
-        related_name="organization",
-        related_query_name="org_source",
+        related_name="organizations",
+        related_query_name="organization",
     )
     slug = models.SlugField(default="", max_length=1024, unique=True)
     user = models.OneToOneField(
@@ -44,13 +44,18 @@ class Organization(DefaultModel):
         return notes.exists()
 
     def org_has_user(self, user, content_user=True, **filters):
-        permissions = self.permissions
-        org_permission = permissions.filter(user=user, **filters).exists()
+        org_permissions = self.permissions.filter(**filters)
+        import pdb
+
+        pdb.set_trace()
+        user_has_permission = user.permissions.filter(
+            id__contains=org_permissions
+        ).exists()
 
         if content_user:
-            has_perm = org_permission or self.org_content_has_user(user, **filters)
+            has_perm = user_has_permission or self.org_content_has_user(user, **filters)
         else:
-            has_perm = org_permission
+            has_perm = user_has_permission
         return has_perm
 
     def org_has_admin_user(self, user, content_user=True):

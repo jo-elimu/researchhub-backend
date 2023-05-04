@@ -6,12 +6,14 @@ from django.db import models
 from django.db.models import DecimalField, Q, Sum, Value
 from django.db.models.functions import Cast, Coalesce
 from django.utils import timezone
+from django.contrib.contenttypes.fields import GenericRelation
 
 from hub.models import Hub
 from mailing_list.models import EmailRecipient
 from reputation.models import PaidStatusModelMixin, Withdrawal
 from researchhub.settings import BASE_FRONTEND_URL, NO_ELASTIC
 from researchhub_access_group.constants import EDITOR
+from researchhub_access_group.related_models.permission_model import Permission
 from user.tasks import handle_spam_user_task, update_elastic_registry
 from utils.message import send_email_message
 from utils.siftscience import decisions_api
@@ -79,7 +81,11 @@ class User(AbstractUser):
     suspended_updated_date = models.DateTimeField(null=True)
     updated_date = models.DateTimeField(auto_now=True)
     upload_tutorial_complete = models.BooleanField(default=False)
-
+    permissions = GenericRelation(
+        Permission,
+        related_name="user",
+        related_query_name="user"
+    )
     objects = UserManager()
 
     def full_name(self):
