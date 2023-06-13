@@ -338,7 +338,10 @@ router.register(
 )
 
 
+from citation.views import pdf_uploads
+
 urlpatterns = [
+    path("api/citation_entry/pdf_uploads/", pdf_uploads),
     path("admin/", admin.site.urls),
     re_path(r"^api/", include(router.urls)),
     path("api/events/forward_event/", google_analytics.views.forward_event),

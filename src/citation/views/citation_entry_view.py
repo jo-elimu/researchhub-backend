@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action
@@ -17,6 +18,23 @@ from citation.tasks import handle_creating_citation_entry
 from user.related_models.organization_model import Organization
 from utils.aws import upload_to_s3
 from utils.openalex import OpenAlex
+
+
+async def pdf_uploads(request):
+    pdfs = request.FILES.getlist("pdfs[]")
+    for pdf in pdfs:
+        url = upload_to_s3(pdf, "citation_pdfs")
+        path = url.split(".com/")[1]
+        handle_creating_citation_entry.apply_async(
+            (
+                path,
+                1,
+                request.POST.get("organization_id"),
+                request.POST.get("project_id"),
+            ),
+            priority=5,
+        )
+    return HttpResponse(status=201)
 
 
 class CitationEntryViewSet(ModelViewSet):
@@ -40,7 +58,7 @@ class CitationEntryViewSet(ModelViewSet):
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
-    @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated])
+    # @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated])
     def pdf_uploads(self, request):
         pdfs = request.FILES.getlist("pdfs[]")
         created = []
