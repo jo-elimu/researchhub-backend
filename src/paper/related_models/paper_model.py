@@ -8,8 +8,8 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.postgres.indexes import GinIndex, HashIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.core.validators import FileExtensionValidator
-from django.db import models, transaction
-from django.db.models import Avg, Count, F, IntegerField, JSONField, Q, Sum
+from django.db import models
+from django.db.models import Avg, Count, IntegerField, JSONField, Q, Sum
 from django.db.models.functions import Cast, Extract
 from django_elasticsearch_dsl_drf.wrappers import dict_to_obj
 from manubot.cite.doi import get_doi_csl_item
@@ -24,7 +24,6 @@ from paper.tasks import (
     celery_extract_meta_data,
     celery_extract_pdf_preview,
     celery_extract_twitter_comments,
-    celery_paper_reset_cache,
 )
 from paper.utils import (
     get_csl_item,
@@ -46,6 +45,7 @@ from researchhub_document.related_models.constants.editor_type import (
 )
 from summary.models import Summary
 from utils.http import check_url_contains_pdf, scraper_get_url
+from utils.models import SoftDeletableModel
 from utils.twitter import (
     get_twitter_doi_results,
     get_twitter_results,
@@ -59,7 +59,7 @@ HELP_TEXT_IS_PUBLIC = "Hides the paper from the public."
 HELP_TEXT_IS_REMOVED = "Hides the paper because it is not allowed."
 
 
-class Paper(AbstractGenericReactionModel):
+class Paper(SoftDeletableModel, AbstractGenericReactionModel):
     FIELDS_TO_EXCLUDE = {"url_svf", "pdf_url_svf", "doi_svf"}
 
     REGULAR = "REGULAR"
@@ -84,10 +84,6 @@ class Paper(AbstractGenericReactionModel):
         related_query_name="paper",
     )
     twitter_score_updated_date = models.DateTimeField(null=True, blank=True)
-    is_public = models.BooleanField(default=True, help_text=HELP_TEXT_IS_PUBLIC)
-
-    # TODO clean this up to use SoftDeleteable mixin in utils
-    is_removed = models.BooleanField(default=False, help_text=HELP_TEXT_IS_REMOVED)
 
     is_removed_by_user = models.BooleanField(
         default=False, help_text=HELP_TEXT_IS_REMOVED
