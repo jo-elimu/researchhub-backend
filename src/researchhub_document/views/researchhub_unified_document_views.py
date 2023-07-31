@@ -63,8 +63,8 @@ class ResearchhubUnifiedDocumentViewSet(ModelViewSet):
     def create(self, *args, **kwargs):
         return Response(status=403)
 
-    def list(self, *args, **kwargs):
-        return Response(status=403)
+    # def list(self, *args, **kwargs):
+    # return Response(status=403)
 
     def retrieve(self, *args, **kwargs):
         return Response(status=403)

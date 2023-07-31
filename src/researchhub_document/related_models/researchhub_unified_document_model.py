@@ -6,6 +6,7 @@ from django.db.models import Avg, Count, Q
 from django.utils.functional import cached_property
 
 from hub.models import Hub
+from hub.related_models import HubV2
 from researchhub.settings import BASE_FRONTEND_URL
 from researchhub_access_group.models import Permission
 from researchhub_document.hot_score_mixin import HotScoreMixin
@@ -57,6 +58,9 @@ class ResearchhubUnifiedDocument(SoftDeletableModel, HotScoreMixin, DefaultModel
         object_id_field="item_object_id",
     )
     hubs = models.ManyToManyField(Hub, related_name="related_documents", blank=True)
+    hubs_v2 = models.ManyToManyField(
+        HubV2, related_name="documents", through="hub.DocumentHub", blank=True
+    )
     document_filter = models.OneToOneField(
         DocumentFilter,
         on_delete=models.CASCADE,

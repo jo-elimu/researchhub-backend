@@ -12,6 +12,10 @@ class HubMetadata(models.Model):
     )
     raw_data = JSONField()
 
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+    is_removed = models.BooleanField(default=False)
+
     def __str__(self):
         return (
             f"Metadata for {self.hub.display_name} "

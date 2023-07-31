@@ -3,6 +3,7 @@ from rest_framework.serializers import (
     HiddenField,
     ModelSerializer,
     Serializer,
+    SerializerMethodField,
 )
 
 

@@ -79,13 +79,17 @@ router.register(r"author", user.views.AuthorViewSet, basename="author")
 
 router.register(r"hub", hub.views.HubViewSet, basename="hub")
 
-router.register(r"hub_category", hub.views.HubCategoryViewSet,
-                basename="hub_category")
+router.register(r"hub_category", hub.views.HubCategoryViewSet, basename="hub_category")
 
 router.register(r"hubs", hub.views.HubV2ViewSet, basename="hubs")
 
-router.register(r"university", user.views.UniversityViewSet,
-                basename="university")
+router.register(
+    r"hubs/(?P<hub_id>[^/.]+)/documents",
+    researchhub_document_views.DocumentViewSet,
+    basename="document-hub-association",
+)
+
+router.register(r"university", user.views.UniversityViewSet, basename="university")
 
 router.register(r"major", user.views.MajorViewSet, basename="major")
 
@@ -127,11 +131,9 @@ router.register(
     basename="events_amplitude",
 )
 
-router.register(r"purchase", purchase.views.PurchaseViewSet,
-                basename="purchase")
+router.register(r"purchase", purchase.views.PurchaseViewSet, basename="purchase")
 
-router.register(r"transactions", purchase.views.BalanceViewSet,
-                basename="transactions")
+router.register(r"transactions", purchase.views.BalanceViewSet, basename="transactions")
 
 router.register(r"user", user.views.UserViewSet)
 
@@ -168,16 +170,24 @@ router.register(
 )
 
 router.register(
+    r"documents", researchhub_document_views.DocumentViewSet, basename="documents"
+)
+
+router.register(
+    r"documents/(?P<document_id>\d+)/hubs",
+    hub.views.DocumentHubViewSet,
+    basename="document-hub-association",
+)
+
+router.register(
     r"hypothesis", hypothesis_views.HypothesisViewSet, basename="hypothesis"
 )
 
-router.register(r"citation", hypothesis_views.CitationViewSet,
-                basename="citations")
+router.register(r"citation", hypothesis_views.CitationViewSet, basename="citations")
 
 router.register(r"note", note_views.NoteViewSet, basename="notes")
 
-router.register(r"note_content", note_views.NoteContentViewSet,
-                basename="note_content")
+router.register(r"note_content", note_views.NoteContentViewSet, basename="note_content")
 
 router.register(
     r"note_template", note_views.NoteTemplateViewSet, basename="note_template"
@@ -193,8 +203,7 @@ router.register(
     r"invite/note", invite_views.NoteInvitationViewSet, basename="note_invite"
 )
 
-router.register(r"gatekeeper", user.views.GatekeeperViewSet,
-                basename="gatekeeper")
+router.register(r"gatekeeper", user.views.GatekeeperViewSet, basename="gatekeeper")
 
 router.register(
     r"user_external_token", user.views.UserApiTokenViewSet, basename="user_api_token"
@@ -217,8 +226,7 @@ router.register(
 router.register(
     r"exchange_rate", purchase.views.RscExchangeRateViewSet, basename="exchange_rate"
 )
-router.register(r"citation_entry", CitationEntryViewSet,
-                basename="citation_entry")
+router.register(r"citation_entry", CitationEntryViewSet, basename="citation_entry")
 router.register(
     r"citation_project", CitationProjectViewSet, basename="citation_project"
 )
@@ -234,8 +242,7 @@ urlpatterns = [
     re_path(r"^api/", include(router.urls)),
     path("api/events/forward_event/", google_analytics.views.forward_event),
     # TODO: calvinhlee - consolidate all mod views into 1 set
-    path("api/get_hub_active_contributors/",
-         editor_views.get_hub_active_contributors),
+    path("api/get_hub_active_contributors/", editor_views.get_hub_active_contributors),
     path(
         "api/moderators/get_editors_by_contributions/",
         editor_views.get_editors_by_contributions,
@@ -268,8 +275,7 @@ urlpatterns = [
         oauth.views.google_callback,
         name="google_callback",
     ),
-    path("api/auth/captcha_verify/",
-         oauth.views.captcha_verify, name="captcha_verify"),
+    path("api/auth/captcha_verify/", oauth.views.captcha_verify, name="captcha_verify"),
     path(
         "api/auth/google/login/", oauth.views.GoogleLogin.as_view(), name="google_login"
     ),

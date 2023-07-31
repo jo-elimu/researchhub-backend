@@ -2,6 +2,7 @@ from django.db.models import Count, Q
 from django_filters import rest_framework as filters
 
 from hub.models import Hub
+from hub.related_models import HubV2
 from researchhub_document.models import ResearchhubUnifiedDocument
 from researchhub_document.related_models.constants.document_type import (
     BOUNTY,
@@ -244,4 +245,175 @@ class UnifiedDocumentFilter(filters.FilterSet):
             user = self.request.user
             hub_ids = user.subscribed_hubs.values_list("id", flat=True)
             qs = qs.filter(hubs__in=hub_ids)
+        return qs
+
+
+class DocumentFilter(filters.FilterSet):
+    """
+    A unified document REST API filter used in conjunction with the new
+    endpoint paths (/api/documents/).
+    """
+
+    hub = filters.ModelChoiceFilter(
+        field_name="hubs_v2",
+        queryset=HubV2.objects.all(),
+        label="Hubs",
+    )
+    type = filters.ChoiceFilter(
+        field_name="document_type",
+        method="type_filter",
+        choices=DOC_CHOICES,
+        null_value="all",
+    )
+    tags = filters.CharFilter(method="tag_filter", label="Tags")
+    ordering = filters.ChoiceFilter(
+        method="ordering_filter",
+        choices=ORDER_CHOICES,
+        label="Ordering",
+    )
+    ignore_excluded = filters.BooleanFilter(
+        method="exclude_filter",
+        label="Excluded documents",
+    )
+
+    class Meta:
+        model = ResearchhubUnifiedDocument
+        fields = ["hub", "ordering", "type", "ignore_excluded"]
+
+    def _map_tag_to_document_filter(self, value):
+        if value == "closed":
+            return "bounty_closed", True
+        elif value == "expired":
+            return "bounty_expired", True
+        elif value == "open":
+            return "bounty_open", True
+        elif value == "unanswered":
+            return "answered", False
+        return value, True
+
+    def type_filter(self, qs, name, value):
+        value = value.upper()
+        selects = (
+            "paper",
+            "paper__uploaded_by",
+            "paper__uploaded_by__author_profile",
+            "hypothesis",
+            "hypothesis__created_by",
+            "hypothesis__created_by__author_profile",
+        )
+        prefetches = (
+            "paper__purchases",
+            "paper__figures",
+            "posts",
+            "posts__created_by",
+            "posts__created_by__author_profile",
+            "posts__purchases",
+            "reviews",
+            "related_bounties",
+        )
+
+        if value == PAPER:
+            qs = qs.filter(document_type=PAPER)
+            selects = (
+                "paper",
+                "paper__uploaded_by",
+                "paper__uploaded_by__author_profile",
+            )
+            prefetches = (
+                "paper",
+                "reviews",
+                "related_bounties",
+                "paper__figures",
+                "paper__purchases",
+            )
+        elif value == POSTS:
+            qs = qs.filter(document_type__in=[DISCUSSION, ELN])
+            selects = []
+            prefetches = [
+                "reviews",
+                "related_bounties",
+                "posts",
+                "posts__created_by",
+                "posts__created_by__author_profile",
+                "posts__purchases",
+            ]
+        elif value == QUESTION:
+            qs = qs.filter(document_type=QUESTION)
+            selects = []
+        elif value == HYPOTHESIS:
+            qs = qs.filter(document_type=HYPOTHESIS)
+            selects = (
+                "hypothesis",
+                "hypothesis__created_by",
+                "hypothesis__created_by__author_profile",
+            )
+            prefetches = (
+                "reviews",
+                "related_bounties",
+                "hypothesis__votes",
+                "hypothesis__citations",
+            )
+        elif value == BOUNTY:
+            prefetches = (
+                "reviews",
+                "related_bounties",
+            )
+            qs = qs.filter(document_filter__has_bounty=True)
+        else:
+            qs = qs.exclude(document_type=NOTE)
+
+        return qs.select_related(*selects).prefetch_related(*prefetches)
+
+    def tag_filter(self, qs, name, values):
+        tags = values.split(",")
+        queries = Q()
+        for value in tags:
+            if value in TAG_CHOICES_STR:
+                key, value = self._map_tag_to_document_filter(value)
+                queries &= Q(**{f"document_filter__{key}": value})
+
+        qs = qs.filter(queries)
+        return qs
+
+    def ordering_filter(self, qs, name, value):
+        time_scope = self.data.get("time", "today")
+        start_date, end_date = get_date_ranges_by_time_scope(time_scope)
+
+        if time_scope not in TIME_SCOPE_CHOICES:
+            time_scope = "today"
+
+        ordering = []
+        if value == NEW:
+            qs = qs.filter(created_date__range=(start_date, end_date))
+            ordering.append("-created_date")
+        elif value == HOT:
+            ordering.append("-hot_score_v2")
+        elif value == DISCUSSED:
+            key = f"document_filter__discussed_{time_scope}"
+            if time_scope != "all":
+                qs = qs.filter(
+                    document_filter__discussed_date__range=(start_date, end_date),
+                    **{f"{key}__gt": 0},
+                )
+            else:
+                qs = qs.filter(document_filter__isnull=False)
+            ordering.append(f"-{key}")
+        elif value == UPVOTED:
+            if time_scope != "all":
+                qs = qs.filter(
+                    document_filter__upvoted_date__range=(start_date, end_date)
+                )
+            else:
+                qs = qs.filter(document_filter__isnull=False)
+            ordering.append(f"-document_filter__upvoted_{time_scope}")
+        elif value == EXPIRING_SOON:
+            ordering.append("document_filter__bounty_expiration_date")
+        elif value == MOST_RSC:
+            ordering.append("-document_filter__bounty_total_amount")
+
+        qs = qs.order_by(*ordering)
+        return qs
+
+    def exclude_filter(self, qs, name, values):
+        qs = qs.exclude(document_filter__is_excluded=True)
         return qs

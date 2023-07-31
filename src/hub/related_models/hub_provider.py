@@ -8,6 +8,10 @@ class HubProvider(models.Model):
     display_name = models.CharField(max_length=255)
     is_user = models.BooleanField()
 
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+    is_removed = models.BooleanField(default=False)
+
     @property
     def hubs(self):
         return HubV2.objects.filter(metadata__hub_provider=self)

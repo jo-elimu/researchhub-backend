@@ -4,13 +4,11 @@ from rest_framework.serializers import (
     SerializerMethodField,
 )
 
+from hub.models import Hub, HubCategory
 from reputation.models import Contribution
 from researchhub.serializers import DynamicModelFieldSerializer
 from researchhub_access_group.serializers import DynamicPermissionSerializer
 from utils.sentry import log_error
-
-from .models import Hub, HubCategory
-from .related_models import HubV2
 
 
 class SimpleHubSerializer(ModelSerializer):
@@ -165,9 +163,3 @@ class DynamicHubSerializer(DynamicModelFieldSerializer):
             context=context,
             many=True,
         ).data
-
-
-class HubV2Serializer(ModelSerializer):
-    class Meta:
-        model = HubV2
-        fields = ["id", "display_name", "description"]

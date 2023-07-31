@@ -1,3 +1,4 @@
 # flake8: noqa
+from .document_views import DocumentViewSet
 from .researchhub_post_views import ResearchhubPostViewSet
 from .researchhub_unified_document_views import ResearchhubUnifiedDocumentViewSet

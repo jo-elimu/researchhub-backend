@@ -6,7 +6,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count, F, Q
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import pagination, viewsets
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter, SearchFilter
@@ -19,6 +19,21 @@ from rest_framework.permissions import (
 from rest_framework.response import Response
 
 from discussion.reaction_models import Vote
+from hub.filters import HubFilter
+from hub.models import Hub, HubCategory
+from hub.permissions import (
+    CensorHub,
+    CreateHub,
+    IsModeratorOrSuperEditor,
+    IsNotSubscribed,
+    IsSubscribed,
+    UpdateHub,
+)
+from hub.serializers import (
+    HubCategorySerializer,
+    HubContributionSerializer,
+    HubSerializer,
+)
 from mailing_list.models import EmailRecipient, HubSubscription
 from paper.models import Paper
 from paper.utils import get_cache_key
@@ -31,24 +46,6 @@ from utils.http import DELETE, GET, PATCH, POST, PUT
 from utils.message import send_email_message
 from utils.permissions import CreateOrUpdateIfAllowed
 from utils.throttles import THROTTLE_CLASSES
-
-from .filters import HubFilter
-from .models import Hub, HubCategory
-from .permissions import (
-    CensorHub,
-    CreateHub,
-    IsModeratorOrSuperEditor,
-    IsNotSubscribed,
-    IsSubscribed,
-    UpdateHub,
-)
-from .related_models import HubV2
-from .serializers import (
-    HubCategorySerializer,
-    HubContributionSerializer,
-    HubSerializer,
-    HubV2Serializer,
-)
 
 
 class CustomPageLimitPagination(PageNumberPagination):
@@ -467,17 +464,4 @@ class HubViewSet(viewsets.ModelViewSet):
 class HubCategoryViewSet(viewsets.ModelViewSet):
     queryset = HubCategory.objects.all()
     serializer_class = HubCategorySerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-
-class HubV2Pagination(pagination.PageNumberPagination):
-    page_size = 10
-    page_size_query_param = "page_size"
-    max_page_size = 10000
-
-
-class HubV2ViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = HubV2.objects.filter(is_removed=False)
-    serializer_class = HubV2Serializer
-    pagination_class = HubV2Pagination
     permission_classes = [IsAuthenticatedOrReadOnly]
