@@ -56,15 +56,15 @@ def censor(requestor, item):
             action.display = False
             action.save()
 
-    doc = item.unified_document
-    doc_type = get_doc_type_key(doc)
-    hubs = list(doc.hubs.all().values_list("id", flat=True))
+    if doc := getattr(item, "unified_document", None):
+        doc_type = get_doc_type_key(doc)
+        hubs = list(doc.hubs.all().values_list("id", flat=True))
 
-    reset_unified_document_cache(
-        hub_ids=hubs,
-        document_type=[doc_type, "all"],
-        filters=[DISCUSSED, HOT],
-    )
+        reset_unified_document_cache(
+            hub_ids=hubs,
+            document_type=[doc_type, "all"],
+            filters=[DISCUSSED, HOT],
+        )
 
     # Commenting out paper cache
     # if item.paper:
