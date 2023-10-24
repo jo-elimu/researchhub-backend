@@ -77,7 +77,9 @@ class HubViewSet(viewsets.ModelViewSet):
         }
 
     def list(self, request):
-        if request.query_params.get("ordering", None) == "score":
+        if request.query_params.get(
+            "ordering", None
+        ) == "score" and not request.query_params.get("page"):
             cache_key = get_cache_key("hubs", "trending")
             cache_hit = cache.get(cache_key)
 
