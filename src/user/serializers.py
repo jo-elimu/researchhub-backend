@@ -78,6 +78,7 @@ class AuthorSerializer(ModelSerializer):
             "university",
             "wallet",
             "is_verified",
+            "linkedin_data",
         ]
         read_only_fields = [
             "added_as_editor_date",
@@ -87,6 +88,7 @@ class AuthorSerializer(ModelSerializer):
             "num_posts",
             "merged_with",
             "is_verified",
+            "linkedin_data",
         ]
 
     def get_reputation(self, obj):

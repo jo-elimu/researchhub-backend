@@ -1,10 +1,8 @@
 import datetime
-import json
 
 import pytz
 import regex as re
 import requests
-from boto3.session import Session
 from bs4 import BeautifulSoup
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.postgres.indexes import GinIndex, HashIndex
@@ -113,8 +111,9 @@ class Paper(AbstractGenericReactionModel):
     authors = models.ManyToManyField(
         "user.Author",
         related_name="authored_papers",
-        blank=True,
+        through="paper.PaperAuthor",
         help_text="Author that participated in the research paper",
+        blank=True,
     )
     hubs = models.ManyToManyField("hub.Hub", related_name="papers", blank=True)
     summary = models.ForeignKey(

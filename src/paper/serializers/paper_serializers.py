@@ -59,14 +59,8 @@ from researchhub_document.utils import (
     update_unified_document_to_paper,
 )
 from user.models import Author
-from user.serializers import (
-    AuthorSerializer,
-    DynamicAuthorSerializer,
-    DynamicUserSerializer,
-    UserSerializer,
-)
+from user.serializers import AuthorSerializer, DynamicUserSerializer, UserSerializer
 from utils.http import check_url_contains_pdf, get_user_from_request
-from utils.siftscience import events_api, update_user_risk_score
 
 
 class BasePaperSerializer(serializers.ModelSerializer, GenericReactionSerializerMixin):
@@ -855,11 +849,13 @@ class DynamicPaperSerializer(
         return vote
 
     def get_authors(self, paper):
+        from paper.serializers import DynamicPaperAuthorSerializer
+
         context = self.context
         _context_fields = context.get("pap_dps_get_authors", {})
 
-        serializer = DynamicAuthorSerializer(
-            paper.authors.all(), many=True, context=context, **_context_fields
+        serializer = DynamicPaperAuthorSerializer(
+            paper.paperauthor_set.all(), many=True, context=context, **_context_fields
         )
         return serializer.data
 
