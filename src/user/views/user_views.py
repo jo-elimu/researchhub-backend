@@ -807,11 +807,12 @@ class UserViewSet(viewsets.ModelViewSet):
         serialized = UserSerializer(user)
         return Response(serialized.data, status=200)
 
-    @action(
-        detail=False,
-        methods=[RequestMethods.POST],
-        permission_classes=[HasVerificationPermission],
-    )
+    # Disabling verification for now
+    # @action(
+    #     detail=False,
+    #     methods=[RequestMethods.POST],
+    #     permission_classes=[HasVerificationPermission],
+    # )
     def verify_user(self, request):
         data = request.data
         openalex_ids = data.get("openalex_ids", [])
@@ -987,9 +988,10 @@ class VerificationViewSet(viewsets.ModelViewSet):
     def bulk_upload(self, request):
         return Response({"message": "Deprecated"})
 
-    @action(
-        detail=False, methods=["post"], permission_classes=[HasVerificationPermission]
-    )
+    # Disabling this endpoint because verification is disabled for now
+    # @action(
+    #     detail=False, methods=["post"], permission_classes=[HasVerificationPermission]
+    # )
     def get_openalex_author_profiles(self, request):
         data = request.data
         user = request.user

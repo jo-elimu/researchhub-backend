@@ -132,12 +132,18 @@ class AuthorClaimCaseViewSet(ModelViewSet):
                 if case.target_paper is None:
                     return Response("Cannot approve. No paper id found.", status=500)
                 else:
-                    move_paper_to_author(
-                        case.target_paper, case.requestor.author_profile
-                    )
+                    requestor = case.requestor
+                    requestor_author_profile = requestor.author_profile
+                    move_paper_to_author(case.target_paper, requestor_author_profile)
                     case.status = update_status
-                    case.save()
+                    case.save(update_fields=["status"])
                     after_approval_flow.apply((case_id,), priority=2, countdown=5)
+
+                    if not requestor.is_verified:
+                        requestor.is_verified = True
+                        requestor_author_profile.is_verified = True
+                        requestor_author_profile.save(update_fields=["is_verified"])
+                        requestor.save(update_fields=["is_verified"])
                     return Response("Success", status=200)
             elif update_status == DENIED:
                 notify_user = request_data["notify_user"]
@@ -145,7 +151,7 @@ class AuthorClaimCaseViewSet(ModelViewSet):
                     (case_id, notify_user), priority=2, countdown=5
                 )
                 case.status = update_status
-                case.save()
+                case.save(update_fields=["status"])
                 return Response("Success", status=200)
             else:
                 return Response("Unrecognized status", status=400)
