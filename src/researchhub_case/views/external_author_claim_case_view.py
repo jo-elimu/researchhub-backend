@@ -20,7 +20,7 @@ from researchhub_case.serializers import (
     ExternalAuthorClaimCaseSerializer,
 )
 from rh_scholarly.lambda_handler import SEARCH_FOR_AUTHORS
-from user.models import Action, User
+from user.models import Action
 from user.permissions import IsModerator
 from utils.http import POST
 from utils.permissions import PostOnly
@@ -101,6 +101,15 @@ class ExternalAuthorClaimCaseViewSet(ModelViewSet):
     )
     def approve_claim(self, request, pk=None):
         claim = self.get_object()
-        claim.approve_google_scholar()
+        claim.approve()
+        serializer = self.get_serializer(claim)
+        return Response(serializer.data, status=200)
+
+    @action(
+        detail=True, methods=[POST], permission_classes=[IsAuthenticated, IsModerator]
+    )
+    def deny_claim(self, request, pk=None):
+        claim = self.get_object()
+        claim.deny()
         serializer = self.get_serializer(claim)
         return Response(serializer.data, status=200)
