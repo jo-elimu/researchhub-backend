@@ -16,6 +16,7 @@ class ExternalAuthorClaimCaseSerializer(ModelSerializer):
             "publication_count",
             "status",
             "semantic_scholar_id",
+            "target_doi",
         ]
         read_only_fields = [
             "created_date",
