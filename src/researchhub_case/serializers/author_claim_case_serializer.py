@@ -51,6 +51,7 @@ class AuthorClaimCaseSerializer(ModelSerializer):
                 "title": paper.title,
                 "id": paper.id,
                 "slug": paper.slug,
+                "doi": paper.doi,
             }
             return obj
         else:
