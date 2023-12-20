@@ -135,6 +135,10 @@ class Bounty(DefaultModel):
     def close(self, status):
         from user.models import User
 
+        if self.status == self.EXPIRED or self.status == self.CANCELLED:
+            # Checks if bounty is already closed or expired
+            return False
+
         proportions = self.get_bounty_proportions()
         escrow_remaining_amount = self.escrow.amount_holding
         escrow_status = None

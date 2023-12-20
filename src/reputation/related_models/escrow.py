@@ -79,7 +79,7 @@ class Escrow(DefaultModel):
     def set_status(self, status, should_save=True):
         self.status = status
         if should_save:
-            self.save()
+            self.save(update_fields=["status"])
 
     def set_paid_status(self, should_save=True):
         self.set_status(self.PAID, should_save=should_save)

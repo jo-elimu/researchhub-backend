@@ -6,6 +6,7 @@ import pytz
 from celery.decorators import periodic_task
 from celery.task.schedules import crontab
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.db.models import DurationField, F
 from django.db.models.functions import Cast
 
@@ -208,15 +209,16 @@ def check_open_bounties():
                 html_template="general_email_message.html",
             )
 
-    expired_bounties = open_bounties.filter(time_left__lte=timedelta(days=0))
-    for bounty in expired_bounties.iterator():
-        refund_status = bounty.close(Bounty.EXPIRED)
-        bounty.unified_document.update_filters(
-            (FILTER_BOUNTY_EXPIRED, FILTER_BOUNTY_OPEN)
-        )
-        if refund_status is False:
-            ids = expired_bounties.values_list("id", flat=True)
-            log_info(f"Failed to refund bounties: {ids}")
+    with transaction.atomic():
+        expired_bounties = open_bounties.filter(time_left__lte=timedelta(days=0))
+        for bounty in expired_bounties.iterator():
+            refund_status = bounty.close(Bounty.EXPIRED)
+            bounty.unified_document.update_filters(
+                (FILTER_BOUNTY_EXPIRED, FILTER_BOUNTY_OPEN)
+            )
+            if refund_status is False:
+                ids = expired_bounties.values_list("id", flat=True)
+                log_info(f"Failed to refund bounties: {ids}")
 
     reset_unified_document_cache(
         document_type=[ALL.lower(), BOUNTY.lower()],

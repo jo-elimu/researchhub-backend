@@ -16,6 +16,7 @@ class ExternalAuthorClaimCase(AbstractResearchhubCase):
     publication_count = models.IntegerField(default=0, null=True)
     semantic_scholar_id = models.CharField(max_length=16, null=True)
     google_scholar_id = models.CharField(max_length=16, null=True)
+    target_doi = models.CharField(max_length=255, null=True)
     status = models.CharField(
         choices=AUTHOR_CLAIM_CASE_STATUS,
         default=INITIATED,
