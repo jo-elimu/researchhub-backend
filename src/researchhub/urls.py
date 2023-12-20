@@ -145,6 +145,10 @@ router.register(r"bounty", reputation.views.BountyViewSet)
 router.register(r"user_verification", user.views.VerificationViewSet)
 
 router.register(
+    r"claim_case", researchhub_case_views.ClaimCaseView, basename="claim_case"
+)
+
+router.register(
     r"author_claim_case",
     researchhub_case_views.AuthorClaimCaseViewSet,
     basename="author_claim_case",

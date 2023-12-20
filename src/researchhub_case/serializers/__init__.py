@@ -5,3 +5,4 @@ from .external_author_claim_case_serializer import (
     DynamicExternalAuthorClaimCaseSerializer,
     ExternalAuthorClaimCaseSerializer,
 )
+from .generic_case_serializer import GenericClaimCaseSerializer
