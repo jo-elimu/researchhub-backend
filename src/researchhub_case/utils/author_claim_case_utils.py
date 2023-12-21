@@ -23,8 +23,15 @@ def get_new_validation_token():
     return [generated_time, token]
 
 
-def get_client_validation_url(validation_token):
+def get_internal_client_validation_url(validation_token):
     return BASE_FRONTEND_URL + f"/author-claim-validation/?token={validation_token}"
+
+
+def get_external_client_validation_url(validation_token):
+    return (
+        BASE_FRONTEND_URL
+        + f"/external-author-claim-validation/?token={validation_token}"
+    )
 
 
 def get_client_profile_url(author):
@@ -39,7 +46,7 @@ def get_paper_url(paper):
     return BASE_FRONTEND_URL + f"/paper/{paper.id}/{paper.slug}"
 
 
-def send_validation_email(case):
+def send_internal_validation_email(case):
     validation_token = case.validation_token
     requestor = case.requestor
     requestor_name = f"{requestor.first_name} {requestor.last_name}"
@@ -49,7 +56,7 @@ def send_validation_email(case):
         "paper_title": case.target_paper.title,
         "paper_url": get_paper_url(case.target_paper),
         "target_author_name": case.target_author_name,
-        "validation_url": get_client_validation_url(validation_token),
+        "validation_url": get_internal_client_validation_url(validation_token),
     }
     send_email_message(
         [case.provided_email],
@@ -57,6 +64,26 @@ def send_validation_email(case):
         "Please Verify Your Paper Claim",
         email_context,
         "author_claim_validation_email.html",
+        "ResearchHub <noreply@researchhub.com>",
+    )
+
+
+def send_external_validation_email(case):
+    validation_token = case.validation_token
+    requestor = case.requestor
+    requestor_name = f"{requestor.first_name} {requestor.last_name}"
+    email_context = {
+        **base_email_context,
+        "requestor_name": requestor_name,
+        "validation_url": get_external_client_validation_url(validation_token),
+        "target_doi": case.target_doi,
+    }
+    send_email_message(
+        [requestor.email],
+        "author_claim_validation_email.txt",
+        "Please Verify Your Paper Claim",
+        email_context,
+        "external_author_claim_validation_email.html",
         "ResearchHub <noreply@researchhub.com>",
     )
 

@@ -40,7 +40,9 @@ class AuthorClaimCaseSerializer(ModelSerializer):
             requestor=requestor,
         )
 
-        trigger_email_validation_flow.apply_async((case.id,), priority=2, countdown=5)
+        trigger_email_validation_flow.apply_async(
+            (case.id, "INTERNAL"), priority=2, countdown=5
+        )
 
         return case
 

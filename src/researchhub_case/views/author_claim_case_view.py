@@ -1,4 +1,3 @@
-from django.core.paginator import Paginator
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -70,7 +69,7 @@ class AuthorClaimCaseViewSet(ModelViewSet):
                 return invalidation_result
 
             target_case.status = OPEN
-            target_case.save()
+            target_case.save(update_fields=["status"])
             return Response("SUCCESS", status=200)
 
         except (KeyError, TypeError) as e:
@@ -92,12 +91,12 @@ class AuthorClaimCaseViewSet(ModelViewSet):
         attempt_count = target_case.validation_attempt_count
         if ALLOWED_VALIDATION_ATTEMPT_COUNT < attempt_count:
             target_case.status = INVALIDATED
-            target_case.save()
+            target_case.save(update_fields=["status"])
             return Response("DENIED_TOO_MANY_ATTEMPS", status=400)
 
         if target_case.requestor.id != current_user.id:
             target_case.validation_attempt_count += 1
-            target_case.save()
+            target_case.save(update_fields=["status"])
             return Response("DENIED_WRONG_USER", status=400)
 
     def _get_author_claim_cases_for_mods(self, request):

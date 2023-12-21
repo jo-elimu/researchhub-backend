@@ -10,13 +10,13 @@ from researchhub.settings import (
     AWS_SECRET_ACCESS_KEY,
 )
 from researchhub_case.constants.case_constants import APPROVED, DENIED, INITIATED
-from researchhub_case.models import AuthorClaimCase
 from researchhub_case.utils.author_claim_case_utils import (
     get_new_validation_token,
     reward_author_claim_case,
     send_approval_email,
+    send_external_validation_email,
+    send_internal_validation_email,
     send_rejection_email,
-    send_validation_email,
 )
 from researchhub_document.related_models.constants.document_type import (
     FILTER_AUTHOR_CLAIMED,
@@ -27,10 +27,15 @@ from utils import sentry
 
 
 @app.task(queue=QUEUE_AUTHOR_CLAIM)
-def trigger_email_validation_flow(
-    case_id,
-):
-    instance = AuthorClaimCase.objects.get(id=case_id)
+def trigger_email_validation_flow(case_id, claim_type):
+    from researchhub_case.models import AuthorClaimCase, ExternalAuthorClaimCase
+
+    if claim_type == "INTERNAL":
+        instance = AuthorClaimCase.objects.get(id=case_id)
+        email_func = send_internal_validation_email
+    else:
+        instance = ExternalAuthorClaimCase.objects.get(id=case_id)
+        email_func = send_external_validation_email
 
     if instance.status == INITIATED:
         try:
@@ -38,9 +43,15 @@ def trigger_email_validation_flow(
             instance.token_generated_time = generated_time
             instance.validation_token = token
             # Note: intentionally sending email before incrementing attempt
-            send_validation_email(instance)
+            email_func(instance)
             instance.validation_attempt_count += 1
-            instance.save()
+            instance.save(
+                update_fields=[
+                    "token_generated_time",
+                    "validation_token",
+                    "validation_attempt_count",
+                ]
+            )
         except Exception as exception:
             print("exception", exception)
             sentry.log_error(exception)
@@ -48,6 +59,8 @@ def trigger_email_validation_flow(
 
 @app.task(queue=QUEUE_AUTHOR_CLAIM)
 def after_approval_flow(case_id):
+    from researchhub_case.models import AuthorClaimCase
+
     instance = AuthorClaimCase.objects.get(id=case_id)
     if instance.status == APPROVED:
         try:
@@ -72,6 +85,8 @@ def after_rejection_flow(
     case_id,
     notify_user=False,
 ):
+    from researchhub_case.models import AuthorClaimCase
+
     instance = AuthorClaimCase.objects.get(id=case_id)
     if instance.status == DENIED and notify_user is True:
         send_rejection_email(instance)

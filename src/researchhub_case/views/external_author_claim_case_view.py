@@ -13,7 +13,13 @@ from researchhub.settings import (
     AWS_SCHOLARLY_LAMBDA,
     AWS_SECRET_ACCESS_KEY,
 )
-from researchhub_case.constants.case_constants import EXTERNAL_AUTHOR_CLAIM
+from researchhub_case.constants.case_constants import (
+    ALLOWED_VALIDATION_ATTEMPT_COUNT,
+    EXTERNAL_AUTHOR_CLAIM,
+    INITIATED,
+    INVALIDATED,
+    OPEN,
+)
 from researchhub_case.models import ExternalAuthorClaimCase
 from researchhub_case.serializers import (
     DynamicExternalAuthorClaimCaseSerializer,
@@ -113,3 +119,40 @@ class ExternalAuthorClaimCaseViewSet(ModelViewSet):
         claim.deny()
         serializer = self.get_serializer(claim)
         return Response(serializer.data, status=200)
+
+    # Verify given requestor's email address
+    @action(
+        detail=False,
+        methods=[POST],
+        permission_classes=[IsAuthenticated],
+    )
+    def author_claim_token_validation(self, request, pk=None):
+        try:
+            validation_token = request.data.get("token")
+            target_case = self.get_queryset().get(
+                status=INITIATED, validation_token=validation_token
+            )
+            invalidation_result = self._check_and_invalidate_case(
+                target_case, request.user
+            )
+            if invalidation_result is not None:
+                return invalidation_result
+
+            target_case.status = OPEN
+            target_case.save(update_fields=["status"])
+            return Response("SUCCESS", status=200)
+
+        except (KeyError, TypeError) as e:
+            return Response(e, status=400)
+
+    def _check_and_invalidate_case(self, target_case, current_user):
+        attempt_count = target_case.validation_attempt_count
+        if ALLOWED_VALIDATION_ATTEMPT_COUNT < attempt_count:
+            target_case.status = INVALIDATED
+            target_case.save(update_fields=["status"])
+            return Response("DENIED_TOO_MANY_ATTEMPS", status=400)
+
+        if target_case.requestor.id != current_user.id:
+            target_case.validation_attempt_count += 1
+            target_case.save(update_fields=["status"])
+            return Response("DENIED_WRONG_USER", status=400)
