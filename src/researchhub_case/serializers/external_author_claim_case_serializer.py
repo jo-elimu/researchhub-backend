@@ -15,6 +15,7 @@ class ExternalAuthorClaimCaseSerializer(ModelSerializer):
             "google_scholar_id",
             "h_index",
             "publication_count",
+            "provided_email",
             "status",
             "semantic_scholar_id",
             "target_doi",
