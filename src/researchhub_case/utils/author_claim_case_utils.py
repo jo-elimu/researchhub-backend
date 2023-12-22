@@ -79,7 +79,7 @@ def send_external_validation_email(case):
         "target_doi": case.target_doi,
     }
     send_email_message(
-        [requestor.email],
+        [case.provided_email],
         "author_claim_validation_email.txt",
         "Please Verify Your Paper Claim",
         email_context,

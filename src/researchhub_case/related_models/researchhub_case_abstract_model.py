@@ -32,6 +32,13 @@ class AbstractResearchhubCase(DefaultModel):
         on_delete=models.CASCADE,
         related_name="%(class)s_requested_cases",
     )
+    provided_email = models.EmailField(
+        blank=False,
+        help_text=(
+            "Requestors may use this field to validate themselves with this email"
+        ),
+        null=False,
+    )
     token_generated_time = models.IntegerField(
         blank=True,
         default=None,
